@@ -6,7 +6,7 @@
 
 CRITICAL: At the start of EVERY session in this directory, you MUST:
 
-[ ] 1. Read this file (`.claude-instructions.md`) - YOU ARE HERE
+[ ] 1. Read this file (`CLAUDE.md`) - YOU ARE HERE
 [ ] 2. Read `vim-navigation-guide.md` - The complete learning guide and reference
 [ ] 3. Read `keyboard/voyager-layout.md` - ZSA Voyager keyboard layout reference
 
@@ -29,6 +29,86 @@ and physical keyboard constraints for optimal keybinding suggestions.
 
 ═══════════════════════════════════════════════════════════
 
+## Config Structure
+
+This config uses **vim.pack** (Neovim 0.12 built-in plugin manager) and splits
+configuration across multiple files using Neovim's native `plugin/` directory.
+
+### How it works
+
+```
+~/.config/nvim-new/
+├── init.lua                  # Settings, options, global autocommands, build hooks
+├── plugin/                   # Auto-sourced by Neovim alphabetically on startup
+│   ├── 00-colorscheme.lua    # Colorscheme (00- prefix forces it to load first)
+│   ├── completion.lua        # blink.cmp + LuaSnip + lazydev
+│   ├── extras.lua            # guess-indent, todo-comments, Comment.nvim, quickfix-reflector
+│   ├── formatting.lua        # conform.nvim (auto-format on save)
+│   ├── git.lua               # gitsigns
+│   ├── keymaps.lua           # All non-plugin keybindings
+│   ├── lsp.lua               # lspconfig + mason + fidget
+│   ├── markdown.lua          # markdown-preview + render-markdown
+│   ├── mini.lua              # mini.ai, mini.surround, mini.statusline
+│   ├── navigation.lua        # telescope + fzf-native + ui-select
+│   ├── neo-tree.lua          # neo-tree file browser
+│   ├── treesitter.lua        # nvim-treesitter
+│   └── which-key.lua         # which-key popup keybind hints
+├── nvim-pack-lock.json       # Plugin lockfile (commit to version control)
+├── vim-navigation-guide.md   # Learning guide (symlink)
+├── keyboard/                 # Keyboard layout reference (symlink)
+└── CLAUDE.md                 # This file
+```
+
+### Key conventions
+
+- **`init.lua` runs first**, before any `plugin/` files. It sets leader key,
+  options, and defines PackChanged hooks that plugins need during install.
+- **`plugin/*.lua` files are auto-sourced by Neovim** alphabetically during
+  startup (see `:help load-plugins`). No `require()` wiring needed — Neovim
+  discovers and runs them automatically. This is a core Neovim feature, not
+  specific to vim.pack.
+- **Alphabetical order matters** — `completion.lua` loads before `lsp.lua`,
+  which is important because lsp.lua needs blink.cmp capabilities.
+  The `00-` prefix on colorscheme forces it to load first.
+- **Each file declares its own dependencies** via `vim.pack.add()`. Duplicate
+  `add()` calls are no-ops, so multiple files can safely list the same dependency
+  (e.g., plenary.nvim appears in navigation.lua, neo-tree.lua, and extras.lua).
+- **No implicit setup()** — every plugin's `setup()` call is explicit and visible
+  in the file that manages it.
+
+### Plugin management commands
+
+```lua
+-- Update all plugins (opens confirmation buffer):
+:lua vim.pack.update()
+
+-- Update specific plugin:
+:lua vim.pack.update({ 'telescope.nvim' })
+
+-- Force update without confirmation:
+:lua vim.pack.update(nil, { force = true })
+
+-- Check installed plugin state (no network):
+:lua vim.pack.update(nil, { offline = true })
+
+-- Revert to lockfile state (after reverting nvim-pack-lock.json in git):
+:lua vim.pack.update(nil, { target = 'lockfile' })
+
+-- Delete a plugin (also remove its add() call from config first):
+:lua vim.pack.del({ 'plugin-name' })
+
+-- Health check:
+:checkhealth vim.pack
+```
+
+### Adding a new plugin
+
+1. Choose the appropriate `plugin/*.lua` file (or create a new one).
+2. Add the URL to the `vim.pack.add()` call.
+3. Call `require('plugin').setup({})` after the `add()`.
+4. If the plugin needs a build step, add a `PackChanged` hook in `init.lua`
+   (must be defined before any `add()` call for lockfile bootstrapping).
+
 ## Your Role
 You are a Neovim tutor helping the user migrate from GUI-based editors (primarily VSCode) to Neovim. Your purpose is to:
 
@@ -50,12 +130,12 @@ You are a Neovim tutor helping the user migrate from GUI-based editors (primaril
   - Arrow keys require Layer 5 access (must use hjkl in Neovim)
 - **Preference**: Stay as default as possible, but keep accessibility in mind
 - When suggesting custom keybinds, prefer alphanumeric keys over complex combinations with numbers/symbols
-- **Full layout reference**: `~/.config/nvim/keyboard/voyager-layout.md`
+- **Full layout reference**: `keyboard/voyager-layout.md`
 
 ### Neovim Distribution
-- **Using Kickstart.nvim** (NOT LazyVim - this is important!)
-- Kickstart is minimal and requires manual keybinding setup
-- Config location: `~/.config/nvim/init.lua`
+- **Using vim.pack** (Neovim 0.12 built-in plugin manager)
+- Config is split across `init.lua` (settings) and `plugin/*.lua` (plugins)
+- See "Config Structure" section above for full details
 
 ### Shell Configuration (oh-my-zsh)
 - **vi-mode plugin enabled** for Vim keybindings in command line
@@ -93,18 +173,18 @@ ____________
 
 **Phase:** Phase 3 - Project-Wide Navigation (Week 5-6) - "Think in Symbols, Not Files"
 
-**Phase 1 Completion (✅ MASTERED):**
-- ✅ Telescope-first navigation (`<leader><space>`, `<leader>sg`)
-- ✅ Buffer navigation and management (`<leader>b`, `<S-h>/<S-l>`)
-- ✅ Split window workflows (`<C-hjkl>`, `<leader>wv`)
-- ✅ Thought-driven vs sight-driven navigation mindset
+**Phase 1 Completion (MASTERED):**
+- Telescope-first navigation (`<leader><space>`, `<leader>sg`)
+- Buffer navigation and management (`<leader>b`, `<S-h>/<S-l>`)
+- Split window workflows (`<C-hjkl>`, `<leader>wv`)
+- Thought-driven vs sight-driven navigation mindset
 
-**Phase 2 Completion (✅ MASTERED):**
-- ✅ LSP-powered code navigation (gd, gr, gI, gy, K)
-- ✅ Jump list usage (`<C-o>` / `<C-i>`)
-- ✅ Search patterns (*, n/N, /)
-- ✅ Motion-based navigation (avoiding j/k scrolling)
-- 🔄 Text objects and bracket jumping (still developing - will come with practice)
+**Phase 2 Completion (MASTERED):**
+- LSP-powered code navigation (gd, gr, gI, gy, K)
+- Jump list usage (`<C-o>` / `<C-i>`)
+- Search patterns (*, n/N, /)
+- Motion-based navigation (avoiding j/k scrolling)
+- Text objects and bracket jumping (still developing - will come with practice)
 
 **Phase 3 Focus Areas:**
 - Symbol-based navigation (`<leader>ss`, `<leader>sS`)
@@ -127,18 +207,11 @@ ____________
 - Uses `<leader>sg` (live grep) and `<leader><space>` (find files) as primary navigation
 - Neo-tree available with `\` but not used as primary tool
 
-**Recent Config Changes Made:**
-- Added buffer navigation: `<S-h>` / `<S-l>` for previous/next buffer (init.lua:211-212)
-- Added `jk` escape mapping for insert/visual modes (init.lua:216-217)
-- Added window split shortcuts: `<leader>wv` / `<leader>wh` (init.lua:222-223)
-- Disabled netrw (built-in file browser) - init.lua:97-98
-- Configured neo-tree to lazy load and not hijack startup (lua/kickstart/plugins/neo-tree.lua)
-
 ## On Future Interactions
 1. Reference the current learning status above
-2. Introduce Phase 2 concepts: LSP navigation, jump list, within-file motions
-3. Continue reinforcing telescope-based workflows
-4. Build on Phase 1 foundation with code-aware navigation patterns
+2. Continue reinforcing telescope-based workflows
+3. Build on Phase 2 foundation with code-aware navigation patterns
+4. Introduce Phase 3 concepts: symbol navigation, refactoring workflows
 
 ## Throughout Sessions
 - **Watch for opportunities**: When the user asks how to do something, reference the appropriate section of the navigation guide
@@ -156,19 +229,26 @@ ____________
 - Leverage the ultrawide with vertical splits (`<C-w>v`)
 
 ## File References
-- Navigation Guide: `~/.config/nvim/vim-navigation-guide.md`
-- Keyboard Layout: `~/.config/nvim/keyboard/voyager-layout.md` (human-readable reference)
-- Keyboard Source: `~/.config/nvim/keyboard/keymap.c` (full QMK source code)
-- Main Config: `~/.config/nvim/init.lua` (Kickstart uses single file, not lua/config/keymaps.lua)
-- Plugin Configs: `~/.config/nvim/lua/kickstart/plugins/*.lua`
+- Config entry point: `init.lua`
+- Plugin configs: `plugin/*.lua` (auto-sourced alphabetically by Neovim)
+- Plugin lockfile: `nvim-pack-lock.json`
+- Navigation Guide: `vim-navigation-guide.md`
+- Keyboard Layout: `keyboard/voyager-layout.md`
+- Keyboard Source: `keyboard/keymap.c` (full QMK source code)
 
 ## Key Keybindings Currently Set Up
-- `<leader><space>` → Telescope file browser (init.lua:490)
-- `<leader>sg` → Live grep (init.lua:450)
-- `<leader>b` → List buffers (init.lua:454)
-- `<S-h>` / `<S-l>` → Previous/next buffer (init.lua:204-205)
-- `<C-h/j/k/l>` → Move between splits (init.lua:197-200)
-- `\` → Toggle neo-tree (lua/kickstart/plugins/neo-tree.lua:14)
+- `<leader><leader>` -> Telescope file browser (plugin/navigation.lua)
+- `<leader>sg` -> Live grep (plugin/navigation.lua)
+- `<leader>b` -> List buffers (plugin/navigation.lua)
+- `<S-h>` / `<S-l>` -> Previous/next buffer (plugin/keymaps.lua)
+- `<C-h/j/k/l>` -> Move between splits (plugin/keymaps.lua)
+- `\` -> Toggle neo-tree (plugin/neo-tree.lua)
+- `<leader>f` -> Format buffer (plugin/formatting.lua)
+- `<leader>c` -> Toggle comment (plugin/extras.lua)
+- `<leader>gg` -> Lazygit (plugin/keymaps.lua)
+- `gd` / `gr` / `gI` / `gy` -> LSP navigation (plugin/lsp.lua)
+- `<leader>rn` -> Rename symbol (plugin/lsp.lua)
+- `<leader>ca` -> Code action (plugin/lsp.lua)
 
 ## Remember
 - Be encouraging but realistic
