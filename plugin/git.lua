@@ -1,8 +1,18 @@
--- Git: gitsigns
--- Adds git diff signs to the gutter (+, ~, _) and utilities for managing changes.
+-- Git: gitsigns + gitlinker
+-- gitsigns: diff signs in the gutter and blame utilities
+-- gitlinker: generate GitHub permalinks for the current line or selection
 -- See `:help gitsigns` to understand the configuration keys.
 
-vim.pack.add({ 'https://github.com/lewis6991/gitsigns.nvim' })
+vim.pack.add({
+  'https://github.com/lewis6991/gitsigns.nvim',
+  'https://github.com/ruifm/gitlinker.nvim',
+})
+
+require('gitlinker').setup()
+vim.keymap.set('n', '<leader>gy', function() require('gitlinker').get_buf_range_url('n') end,
+  { desc = '[G]it [Y]ank permalink (copy)' })
+vim.keymap.set('v', '<leader>gy', function() require('gitlinker').get_buf_range_url('v') end,
+  { silent = false, desc = '[G]it [Y]ank permalink (copy)' })
 
 require('gitsigns').setup({
   signs = {
